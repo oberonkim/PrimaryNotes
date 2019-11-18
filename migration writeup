@@ -1,0 +1,62 @@
+#!/bin/bash
+yum install -y nano git httpd mariadb mariadb-server epel-release wget zip unzip
+yum install -y http://rpms.remirepo.net/enterprise/remi-release-7.rpm
+yum-config-manager --enable remi-php72
+yum install -y php
+
+yum erase -y selinux*
+cd /var/www/html
+mkdir wiki && mkdir staging
+cd wiki
+curl -O https://releases.wikimedia.org/mediawiki/1.33/mediawiki-1.33.0.tar.gz
+tar xvzf mediawiki-*.tar.gz
+mv mediawiki-1.33.0/* /var/www/html/wiki
+chown -R apache:apache /var/www
+systemctl start httpd.service
+systemctl enable httpd.service
+systemctl start mariadb
+mysql_secure_installation
+
+systemctl enable mariadb.service
+mysql -u root -p
+echo >> password
+CREATE DATABASE my_wiki;
+GRANT INDEX, CREATE, SELECT, INSERT, UPDATE, DELETE, ALTER, LOCK TABLES ON my_wiki.* TO 'obki'@'localhost' IDENTIFIED BY 'password';
+FLUSH PRIVILEGES;
+exit;
+
+##Migration
+rsync -avz --stats --progress /html root@192.168.33.13:/var/www/html/
+mysqldump --all-databases -u root -p >backup.sql
+rysnc -avz --stats --progress /html root@192.168.33.13:##some path
+
+##On host B
+##Install stuff
+yum install -y nano git httpd mariadb mariadb-server epel-release wget zip unzip
+yum install -y http://rpms.remirepo.net/enterprise/remi-release-7.rpm
+yum-config-manager --enable remi-php72
+yum install -y php
+yum install -y php-mysql php-xml php-intl php-gd php-mbstring php-mysql
+yum erase selinux*
+
+#Enable services
+systemctl start mariadb.service
+systemctl start httpd.service
+systemctl enable mariadb.service
+systemctl enable mariadb.service
+
+##Start mysql and import databases
+mysql_secure_installation
+mysql -u root -p < backup.sql
+
+#Double check databases imported correctly
+mysql -u root -p
+SHOW DATABASES;
+EXIT;
+
+chown -R apache:apache /var/www
+chwon -R apache:apache /var/www/html
+
+systemctl restart httpd.service
+
+Xr8i8WgzNFnqvw$*
